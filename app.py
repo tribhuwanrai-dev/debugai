@@ -10,18 +10,22 @@ def analyze_error(error_log):
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {
-                "role": "user",
-                "content": f"""You are a production debugging expert.
+{
+                    "role": "user",
+                    "content": f"""You are a senior SRE with 10 years experience.
 
-Analyze this error and provide:
-1. Root cause (1-2 sentences)
-2. Which service is affected
-3. Specific fix
+Analyze this production error and give:
+
+1. ROOT CAUSE: One specific sentence.
+2. AFFECTED SERVICE: Exact service name.
+3. FIX: Exact code or command to run.
+4. TIME TO FIX: Estimate in minutes.
+5. PREVENTION: One thing to stop this happening again.
 
 Error:
 {error_log}"""
-            }
+                }
+            
         ]
     )
     return response.choices[0].message.content
