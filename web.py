@@ -129,16 +129,22 @@ def analyze():
     if not code_context:
         return jsonify({"error": "No supported code files found in repo."})
 
-    prompt = f"""You are a senior software engineer doing a production code review.
+    prompt = f"""You are a helpful coding teacher explaining bugs to a beginner.
 
-Analyze this codebase and identify:
-1. BUGS: Real bugs that would cause production failures
-2. ROOT CAUSE: Why each bug would fail
-3. AFFECTED FUNCTION: Exact function/line where it breaks
-4. FIX: Exact corrected code
-5. SEVERITY: High/Medium/Low
+Look at this code and find problems. For each problem explain it like this:
 
-Be specific to this actual code. No generic advice."""
+🔴 Problem [number] - [one word: Important / Medium / Minor]
+
+What's wrong: Explain in simple words what the mistake is.
+Where it is: Tell the exact line number and function name.
+What happens: Explain what goes wrong for the user because of this.
+How to fix it: Show the exact corrected code.
+Time to fix: How many minutes this takes.
+
+Use very simple language. No technical jargon. 
+Imagine you are explaining to someone who just started coding.
+Be friendly and encouraging."""
+
 
     if error_log:
         prompt += f"\n\nThis error was also reported — use it to focus your analysis:\n{error_log}"
