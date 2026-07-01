@@ -14,39 +14,72 @@ HTML = """
 <html>
 <head>
     <title>DebugAI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #0d1117; color: #e6edf3; }
-        h1 { color: #58a6ff; }
-        input, textarea { width: 100%; background: #161b22; color: #e6edf3; border: 1px solid #30363d; padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 10px; }
-        textarea { height: 150px; }
-        label { font-size: 13px; color: #8b949e; display: block; margin-bottom: 4px; }
-        .note { font-size: 11px; color: #6e7681; margin-bottom: 10px; }
-        button { background: #238636; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 15px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; gap: 10px; }
+        .header h1 { font-size: 20px; color: #58a6ff; }
+        .container { max-width: 860px; margin: 32px auto; padding: 0 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+        label { font-size: 13px; color: #8b949e; display: block; margin-bottom: 6px; }
+        input, textarea { width: 100%; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; padding: 10px 12px; border-radius: 6px; font-size: 14px; margin-bottom: 14px; outline: none; }
+        input:focus, textarea:focus { border-color: #58a6ff; }
+        textarea { height: 120px; resize: vertical; }
+        .note { font-size: 11px; color: #6e7681; margin-top: -10px; margin-bottom: 14px; }
+        button { background: #238636; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500; width: 100%; }
         button:hover { background: #2ea043; }
-        #result { margin-top: 20px; background: #161b22; padding: 20px; border-radius: 6px; border: 1px solid #30363d; white-space: pre-wrap; display: none; line-height: 1.6; }
-        #loading { display: none; color: #58a6ff; margin-top: 10px; }
-        .divider { border-top: 1px solid #30363d; margin: 16px 0; }
+        button:disabled { background: #21262d; color: #8b949e; cursor: not-allowed; }
+        .loading { text-align: center; color: #58a6ff; padding: 20px; display: none; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #results { margin-top: 20px; }
+        .result-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-bottom: 12px; }
+        .result-card h2 { font-size: 15px; color: #e6edf3; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #30363d; }
+        .result-card p { font-size: 14px; line-height: 1.6; color: #c9d1d9; margin-bottom: 8px; }
+        .result-card code { background: #0d1117; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #79c0ff; }
+        .result-card pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin: 8px 0; overflow-x: auto; }
+        .result-card pre code { background: none; padding: 0; color: #e6edf3; }
+        .result-card strong { color: #e6edf3; }
+        .result-card ul, .result-card ol { padding-left: 20px; margin: 8px 0; }
+        .result-card li { margin-bottom: 4px; color: #c9d1d9; font-size: 14px; line-height: 1.6; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+        .badge-high { background: #3d1a1a; color: #f85149; }
+        .badge-medium { background: #2d2a1a; color: #e3b341; }
+        .badge-minor { background: #1a2d1a; color: #3fb950; }
+        .summary-bar { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 14px 20px; margin-bottom: 16px; display: flex; gap: 20px; align-items: center; }
+        .summary-bar span { font-size: 13px; color: #8b949e; }
+        .summary-bar strong { color: #e6edf3; }
     </style>
 </head>
 <body>
-    <h1>⚡ DebugAI</h1>
-    <p>Connect your GitHub repo for real diagnosis. Paste an error for deeper context.</p>
+    <div class="header">
+        <span style="font-size:22px">⚡</span>
+        <h1>DebugAI</h1>
+        <span style="color:#8b949e; font-size:13px; margin-left:8px">AI-powered code analysis</span>
+    </div>
 
-    <label>GitHub repo URL <span style="color:#f85149">*</span></label>
-    <input id="repo" placeholder="https://github.com/username/repo" />
+    <div class="container">
+        <div class="card">
+            <label>GitHub Repo URL <span style="color:#f85149">*</span></label>
+            <input id="repo" placeholder="https://github.com/username/repo" />
 
-    <label>GitHub token <span style="color:#6e7681">(only needed for private repos)</span></label>
-    <input id="token" type="password" placeholder="ghp_xxxxxxxxxxxx" />
-    <p class="note">Your token is sent directly to GitHub and never stored on our servers.</p>
+            <label>GitHub Token <span style="color:#6e7681">(only for private repos)</span></label>
+            <input id="token" type="password" placeholder="ghp_xxxxxxxxxxxx" />
+            <p class="note">Your token goes directly to GitHub — never stored on our servers.</p>
 
-    <div class="divider"></div>
+            <label>Error Log <span style="color:#6e7681">(optional — helps focus the analysis)</span></label>
+            <textarea id="error" placeholder="Paste any error message here..."></textarea>
 
-    <label>Error log <span style="color:#6e7681">(optional — adds more context)</span></label>
-    <textarea id="error" placeholder="Paste your error log here for even more specific analysis..."></textarea>
+            <button id="btn" onclick="analyze()">🔍 Analyze Code</button>
+        </div>
 
-    <button onclick="analyze()">Analyze Repo</button>
-    <p id="loading">Fetching code and analyzing...</p>
-    <div id="result"></div>
+        <div class="loading" id="loading">
+            <span class="spinner"></span> Fetching code and analyzing...
+        </div>
+
+        <div id="results"></div>
+    </div>
 
     <script>
         async function analyze() {
@@ -54,29 +87,73 @@ HTML = """
             const token = document.getElementById('token').value.trim();
             const error = document.getElementById('error').value.trim();
 
-            if (!repo) {
-                alert('Please enter a GitHub repo URL');
+            if (!repo) { alert('Please enter a GitHub repo URL'); return; }
+
+            document.getElementById('btn').disabled = true;
+            document.getElementById('btn').textContent = 'Analyzing...';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repo, token, error })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.error) {
+                    document.getElementById('results').innerHTML = 
+                        '<div class="result-card"><p style="color:#f85149">⚠️ ' + data.error + '</p></div>';
+                } else {
+                    renderResults(data.result);
+                }
+            } catch(e) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').innerHTML = 
+                    '<div class="result-card"><p style="color:#f85149">⚠️ Something went wrong. Try again.</p></div>';
+            }
+
+            document.getElementById('btn').disabled = false;
+            document.getElementById('btn').textContent = '🔍 Analyze Code';
+        }
+
+        function getBadge(text) {
+            const lower = text.toLowerCase();
+            if (lower.includes('important') || lower.includes('high')) 
+                return '<span class="badge badge-high">🔴 Important</span>';
+            if (lower.includes('medium')) 
+                return '<span class="badge badge-medium">🟡 Medium</span>';
+            return '<span class="badge badge-minor">🟢 Minor</span>';
+        }
+
+        function renderResults(text) {
+            const container = document.getElementById('results');
+            
+            const sections = text.split(/(?=🔴|(?:##\s*\d+\s*-))/g).filter(s => s.trim());
+            
+            if (sections.length <= 1) {
+                container.innerHTML = '<div class="result-card">' + marked.parse(text) + '</div>';
                 return;
             }
 
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('result').style.display = 'none';
-
-            const response = await fetch('/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ repo, token, error })
+            let html = '<div class="summary-bar"><span>Found <strong>' + (sections.length) + ' issues</strong> in your code</span></div>';
+            
+            sections.forEach((section, i) => {
+                const badge = getBadge(section);
+                html += '<div class="result-card"><h2>Issue ' + (i+1) + ' ' + badge + '</h2>' + marked.parse(section) + '</div>';
             });
 
-            const data = await response.json();
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('result').innerText = data.result || data.error;
+            container.innerHTML = html;
         }
     </script>
 </body>
 </html>
 """
+
+
 
 def fetch_repo_code(repo_url, token=""):
     try:
